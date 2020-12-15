@@ -3,16 +3,7 @@ library(SNPRelate)
 library(sm)
 
 ###read in DArT file to Genlight object
-Lepdatanests <- gl.read.dart(filename="Report_DLepo19-4747_1_moreOrders_SNP_1.csv", ind.metafile="dartmetadatanests.csv")
-AridOnly <- gl.read.dart(filename="ARID ONLY SNPS.csv", ind.metafile="aridmetadatanestsSNPSEX.csv")
-
-###read in Genlight
-Lepdatanests <- readRDS("Lepdatanests.Rdata")
-AridUnfiltered <- readRDS("AridOnlyUnfiltered.Rdata")
-
-###convert genlight to genind/bayescan
-ARgi <- gl2gi(AR, v = 1)
-genomic_converter(lepfilter, output = "bayescan", filename = "lepfilteredbayescan.txt")
+AridOnly <- gl.read.dart(filename="ARID ONLY SNPS.csv", ind.metafile="ARID SNR METADATA.csv")
 
 ###filter out monomorphs
 aridfilter <- gl.filter.monomorphs(AridOnly)
@@ -24,7 +15,7 @@ aridfilter <- gl.filter.callrate(aridfilter, threshold = 0.70)
 aridfilterallpops <- gl.merge.pop(aridfilter, old = c("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","19","NA"), new="ALL")
 gl.report.heterozygosity(aridfilterallpops)
 
-###Below not run
+###Additional filtering steps for Genalex 
 ###filter out MAFs <0.40
 #aridfilter <- gl.filter.maf(aridfilter, threshold = 0.40)
 
@@ -35,6 +26,7 @@ gl.report.heterozygosity(aridfilterallpops)
 #lepfilter <- gl.filter.repavg(lepfilter, threshold = 0.9)
 
 ###SNPRelate Identity-By-Descent Analysis(KING method of moment)
+ARgds <- gl2gds(aridfilter)
 ibdking <- snpgdsIBDKING(ARgds, sample.id=NULL, snp.id=NULL, autosome.only=TRUE, remove.monosnp=TRUE, maf=NaN, missing.rate=NaN, type=c("KING-robust", "KING-homo"), family.id=NULL, num.thread=1L, useMatrix=FALSE, verbose=TRUE)
 dat <- snpgdsIBDSelection(ibdking , 1/32)
 plot(dat$IBS0, dat$kinship, xlab="Proportion of Zero IBS",
@@ -43,7 +35,7 @@ write.csv(dat, "AR Kinship Analysis.csv")
 
 ###Convert to COLONY file
 library(radiator)
-artidy <- tidy_genomic_data(ARfilter)
+artidy <- tidy_genomic_data(aridfilter)
 colony <- write_colony(artidy, sample.markers = 500)
 
 ###Construct network
